@@ -12,7 +12,7 @@ class promise {
   constructor(resolver) {
     // 传入的非函数则报错
     if (!this._isFunction(resolver)) {
-      throw Error(REASON);
+      throw new TypeError(REASON);
     }
     // 初始化状态
     this.currentStatus = PENDING;
@@ -51,7 +51,7 @@ class promise {
       });
     };
 
-    // 执行回调函数（捕获传入函数的 throw Error 报错）
+    // 执行回调函数（捕获传入函数的 throw 报错）
     try {
       resolver(this.resolved, this.rejected);
     } catch (reason) {
@@ -67,8 +67,9 @@ class promise {
    * @memberof promise
    */
   then(onResolved, onRejected) {
+    // 此处处理 then 链，结果存入数组，实现透传，同时 onRejected 为错误捕获做准备
     onResolved = this._isFunction(onResolved) ? onResolved : value => value;
-    onRejected = this._isFunction(onRejected) ? onRejected : () => { throw Error(REASON); };
+    onRejected = this._isFunction(onRejected) ? onRejected : reason => { throw (reason); };
     // 判断当前的状态，每次都返回一个新的 promise 实例（规范3.3）
     let statusNow = this.currentStatus;
     let promiseNext = null;
@@ -76,7 +77,7 @@ class promise {
     if (statusNow === PENDING) {
       promiseNext = new promise((resolved, rejected) => {
         // 处理 resolved 部分函数
-        this._setResolvedList(onResolved, resolved, rejected);
+        this._setResolvedList(onResolved, onRejected, resolved, rejected);
         // 处理 reject 部分函数
         this._setRejectedList(onRejected, resolved, rejected);
       })
@@ -85,7 +86,7 @@ class promise {
     if (statusNow === RESOLVED) {
       promiseNext = new promise((resolved, rejected) => {
         setTimeout(() => {
-          this._setResolvedList(onResolved, resolved, rejected);
+          this._setResolvedList(onResolved, onRejected, resolved, rejected);
         })
       });
     }
@@ -111,17 +112,19 @@ class promise {
   /**
    * 为 resolvedArr 列表添加回调项
    *
-   * @param {*} onResolved 回调函数
-   * @param {*} resolved
-   * @param {*} rejected
+   * @param {Function} onResolved
+   * @param {Function} onRejected
+   * @param {Function} resolved
+   * @param {Function} rejected
    * @memberof promise
    */
-  _setResolvedList(onResolved, resolved, rejected) {
+  _setResolvedList(onResolved, onRejected, resolved, rejected) {
+    let callback = null;
     this.resolvedArr.push(() => {
-      // 考虑到传入的函数为 () => { throw Error('reason') }
+      // 考虑到传入的函数为 () => { throw new Error('reason') }
       try {
         // 获取当前 then 函数的返回值（入参为前者的结果）
-        const callback = onResolved(this.result);
+        callback = onResolved(this.result);
         // 单个 then 链
         resolved(callback);
       } catch(reason) {
@@ -139,11 +142,12 @@ class promise {
    * @memberof promise
    */
   _setRejectedList(onRejected, resolved, rejected) {
+    let callback = null;
     this.rejectedArr.push(() => {
-      // 考虑到传入的函数为 () => { throw Error('reason') }
+      // 考虑到传入的函数为 () => { throw new Error('reason') }
       try {
         // 获取当前 then 函数的返回值（入参为前者的结果）
-        let callback = onRejected(this.result);
+        callback = onRejected(this.result);
         // 单个 then 链
         resolved(callback);
       } catch(reason) {
@@ -163,25 +167,74 @@ class promise {
   }
 }
 
-new promise((resolved, rejected) => {
-  resolved(1);
-}).then(res1 => {
-  console.log(res1);
-  return 2;
-}).then( res2 => {
-  console.log(res2);
-}).then(
-  console.log('test')
-);
+/**
+ * 测试部分
+ */
+// Case 0: 初次传入非函数
+new promise(1);
 
-// let test = new promise(() => {
-//   new promise(() => {
-//     console.log('test');
-//   });
-// });
-// console.log(test);
-
-
+// Case 1: 直接输入报错的函数
 // new promise(() => {
-//   throw Error('error');
+//   throw new Error('error');
 // });
+
+// Case 2: 没有触发状态数组
+// new promise((resolved, rejected) => {
+//   console.log(1);
+// })
+// .then(() => {
+//   console.log(2);
+// })
+// .then( console.log(3) );
+
+// Case 3: 透传
+// new promise((resolved, rejected) => {
+//   resolved(1);
+// }).then().then(res => {
+//   console.log('result' ,res);
+// });
+
+// Case 4: 正常流程测试
+// new promise((resolved, rejected) => {
+//   resolved(1);
+// }).then(res1 => {
+//   console.log(res1);
+//   return 2;
+// }).then( res2 => {
+//   console.log(res2);
+// }).then( console.log('test') );
+
+// Case 5: 链首传入报错内容（待处理）
+// new promise((resolved, rejected) => {
+//   // throw new Error('error');
+//   rejected(1);
+// }).then(res => {
+//   console.log('rejected', res);
+// });
+
+// Case 6: 链中传入报错内容
+// new promise((resolved, rejected) => {
+//   resolved(1)
+// }).then(res => {
+//   console.log(res);
+//   return 2;
+// }).then(res => {
+//   console.log(res);
+//   throw new Error('test');
+// }).then(res => {
+//   console.log(res);
+// });
+
+// Case 7: 回调处理类型为 promise 类型（待处理）
+// new promise((resolve, reject)=>{
+//   let innerPromise = new promise((resolve, reject)=>{
+//       console.log(4);
+//       resolve('test');
+//   }
+//   );
+//   console.log(1)
+//   resolve(innerPromise);
+// }).then(res => {
+//   console.log(2);
+//   console.log(res, typeof res)
+// }).then(console.log(3));
