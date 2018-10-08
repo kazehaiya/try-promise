@@ -165,9 +165,14 @@ class promise {
 
 new promise((resolved, rejected) => {
   resolved(1);
-}).then(res => {
-  console.log(res);
-}).then(console.log('test'));
+}).then(res1 => {
+  console.log(res1);
+  return 2;
+}).then( res2 => {
+  console.log(res2);
+}).then(
+  console.log('test')
+);
 
 // let test = new promise(() => {
 //   new promise(() => {
