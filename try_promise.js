@@ -1,7 +1,6 @@
 const PENDING = 'pending';
 const RESOLVED = 'resolved';
 const REJECTED = 'rejected';
-const REASON = 'promise resolver is not a function at new promise!';
 
 /**
  * 仿写 promise
@@ -10,10 +9,6 @@ const REASON = 'promise resolver is not a function at new promise!';
  */
 class promise {
   constructor(resolver) {
-    // 传入的非函数则报错
-    if (!this._isFunction(resolver)) {
-      throw new TypeError(REASON);
-    }
     // 初始化状态
     this.currentStatus = PENDING;
     // 两种状态的数组（仅当有 then 时存入待处理的内容）
@@ -107,7 +102,9 @@ class promise {
    *
    * @memberof promise
    */
-  catch() {}
+  catch(reason) {
+    // console.log(reason)
+  }
 
   /**
    * 为 resolvedArr 列表添加回调项
@@ -171,7 +168,7 @@ class promise {
  * 测试部分
  */
 // Case 0: 初次传入非函数
-new promise(1);
+// new promise(1);
 
 // Case 1: 直接输入报错的函数
 // new promise(() => {
