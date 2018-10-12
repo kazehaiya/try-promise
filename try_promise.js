@@ -235,14 +235,21 @@ class promise {
  * 测试部分
  */
 // Case 0: 初次传入非函数
-// new promise(1);
+// new promise(1).catch(e => {
+//   console.log(e);
+// });
 
 // Case 1: 直接输入报错的函数
-new promise(() => {
-  throw new Error('error');
-}).catch(e => {
-  console.log(e);
-});
+// new promise(() => {
+//   throw new Error('error');
+// })
+// .then(console.log('run directly part'))
+// .then(res => {
+//   console.log('resolve:', res)
+// })
+// .catch(e => {
+//   console.log(e);
+// });
 
 // Case 2: 没有触发状态数组
 // new promise((resolved, rejected) => {
@@ -270,12 +277,14 @@ new promise(() => {
 //   console.log(res2);
 // }).then( console.log('test') );
 
-// Case 5: 链首传入报错内容（待处理）
+// Case 5: 链首传入报错内容
 // new promise((resolved, rejected) => {
 //   // throw new Error('error');
 //   rejected(1);
 // }).then(res => {
 //   console.log('rejected', res);
+// }).catch(e => {
+//   console.log(e);
 // });
 
 // Case 6: 链中传入报错内容
@@ -291,7 +300,7 @@ new promise(() => {
 //   console.log(res);
 // });
 
-// Case 7: 回调处理类型为 promise 类型（待处理）
+// Case 7: 回调处理类型为 promise 类型
 // new promise((resolve, reject)=>{
 //   let innerPromise = new promise((resolve, reject)=>{
 //       console.log(4);
@@ -300,7 +309,12 @@ new promise(() => {
 //   );
 //   console.log(1)
 //   resolve(innerPromise);
-// }).then(res => {
+// })
+// .then(res => {
 //   console.log(2);
 //   console.log(res, typeof res)
-// }).then(console.log(3));
+// })
+// .then(console.log(3))
+// .catch(e => {
+//   console.log(e);
+// });
