@@ -8,7 +8,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "program": "${workspaceFolder}/try_promise.js"
+      "program": "${workspaceFolder}/check.js"
     }
   ]
 }

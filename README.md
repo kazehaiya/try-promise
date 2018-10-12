@@ -2,7 +2,7 @@
 
 ## 学习心得
 #### Promise 最初的流程
-1. 最初走完整个 promise 链，先处理同步内容（即 resolved 和 rejected 都不是函数的情况），直接执行该内容，遇见回调函数则存入数组（resolved 函数存入 resolveArr 数组，rejected 函数存入 rejectedArr 数组）
+1. 最初走完整个 promise 链，先处理同步内容（即 resolved 和 rejected 都不是函数的情况），直接执行该内容，遇见函数则存入回调数组（resolved 函数存入 resolveArr 数组，rejected 函数存入 rejectedArr 数组）
 > 注：最初的函数如果没有调用 resolved/rejected 回调函数则 then 链的异步回调函数都会被忽略（因为没有触发存储状态的数组）;<br>
 > then 链的函数由 promise 3.x 规范知默认返回 promise 类型的回调函数且可透传;
 

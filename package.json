@@ -1,0 +1,12 @@
+{
+  "name": "try-promise",
+  "version": "1.0.0",
+  "description": "try to impltement promise function",
+  "main": "check.js",
+  "scripts": {
+    "test": "node check.js"
+  },
+  "repository": "git@github.com:kazehaiya/try-promise.git",
+  "author": "c763416559@gmail.com",
+  "license": "TIM"
+}
