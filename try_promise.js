@@ -72,16 +72,16 @@ class promise {
     if (statusNow === PENDING) {
       promiseNext = new promise((resolved, rejected) => {
         // 处理 resolved 部分函数
-        this._setResolvedList(onResolved, onRejected, resolved, rejected);
+        this._setResolvedList(promiseNext, onResolved, resolved, rejected);
         // 处理 reject 部分函数
-        this._setRejectedList(onRejected, resolved, rejected);
+        this._setRejectedList(promiseNext, onRejected, resolved, rejected);
       })
     }
     // resolved 状态
     if (statusNow === RESOLVED) {
       promiseNext = new promise((resolved, rejected) => {
         setTimeout(() => {
-          this._setResolvedList(onResolved, onRejected, resolved, rejected);
+          this._setResolvedList(promiseNext, onResolved, resolved, rejected);
         })
       });
     }
@@ -89,7 +89,7 @@ class promise {
     if (statusNow === REJECTED) {
       promiseNext = new promise((resolved, rejected) => {
         setTimeout(() => {
-          this._setRejectedList(onRejected, resolved, rejected);
+          this._setRejectedList(promiseNext, onRejected, resolved, rejected);
         })
       });
     }
@@ -100,30 +100,32 @@ class promise {
   /**
    * 异常捕捉
    *
+   * @param {Function} onRejected
+   * @returns
    * @memberof promise
    */
-  catch(reason) {
-    // console.log(reason)
+  catch(onRejected) {
+    return this.then(undefined, onRejected);
   }
 
   /**
    * 为 resolvedArr 列表添加回调项
    *
+   * @param {Object} newPromise
    * @param {Function} onResolved
    * @param {Function} onRejected
    * @param {Function} resolved
    * @param {Function} rejected
    * @memberof promise
    */
-  _setResolvedList(onResolved, onRejected, resolved, rejected) {
+  _setResolvedList(newPromise, onResolved, resolved, rejected) {
     let callback = null;
     this.resolvedArr.push(() => {
       // 考虑到传入的函数为 () => { throw new Error('reason') }
       try {
         // 获取当前 then 函数的返回值（入参为前者的结果）
         callback = onResolved(this.result);
-        // 单个 then 链
-        resolved(callback);
+        this._thenable(newPromise, callback, resolved, rejected);
       } catch(reason) {
         rejected(reason);
       }
@@ -133,24 +135,89 @@ class promise {
   /**
    * 为 resolvedArr 列表添加回调项
    *
-   * @param {*} onResolved
-   * @param {*} resolved
-   * @param {*} rejected
+   * @param {Object} newPromise
+   * @param {Function} onResolved
+   * @param {Function} resolved
+   * @param {Function} rejected
    * @memberof promise
    */
-  _setRejectedList(onRejected, resolved, rejected) {
+  _setRejectedList(newPromise, onRejected, resolved, rejected) {
     let callback = null;
     this.rejectedArr.push(() => {
       // 考虑到传入的函数为 () => { throw new Error('reason') }
       try {
         // 获取当前 then 函数的返回值（入参为前者的结果）
         callback = onRejected(this.result);
-        // 单个 then 链
-        resolved(callback);
+        this._thenable(newPromise, callback, resolved, rejected);
       } catch(reason) {
         rejected(reason);
       }
     });
+  }
+
+  /**
+   * Promise 解决过程
+   *
+   * @param {Object} newPromise  返回的新 promise 对象
+   * @param {*} x                上一个回调函数返回值
+   * @param {Function} resolved  回调函数
+   * @param {Function} rejected  回调函数
+   * @memberof promise
+   */
+  _thenable(newPromise, x, resolved, rejected) {
+    // x 与 传入的 promise 相等
+    if (newPromise === x) {
+      return rejected(new TypeError("Try to use the same promise object as return object!"));
+    }
+    // x 为 promise 类型
+    if (x instanceof promise) {
+      // 判断 x 当前的状态，如果 x 处于等待态，promise 需保持为等待态直至 x 被执行或拒绝
+      if (x.currentStatus === PENDING) {
+        x.then(value => {
+          this._thenable(promise2, value, resolve, reject);
+        }, reject);
+      } else {
+        // 当为 resolved/rejected 状态时，直接执行返回对应状态即可
+        x.then(resolve, reject);
+      }
+    }
+    // 调用时，如果状态一旦改变了就不再执行其余的内容
+    let statusChanged = false;
+    // x 为对象或函数
+    if (x !== null && (typeof x === 'object' || typeof x === 'function')) {
+      // 如果取 x.then 的值时抛出错误 e ，则以 e 为据因拒绝 promise
+      try {
+        const then = x.then;
+        // 如果 then 是函数，将 x 作为函数的作用域 this 调用之，第一个参数叫做 resolvePromise ，第二个参数叫做 rejectPromise
+        if (typeof then === 'function') {
+          // 注：如果 resolvePromise 和 rejectPromise 均被调用，或者被同一参数调用了多次，则优先采用首次调用并忽略剩下的调用
+          then.call(
+            x,
+            y => {
+              if (statusChanged) { return; }
+              statusChanged = true;
+              this._thenable(newPromise, x, resolved, rejected);
+            }, // 如果 resolvePromise 以值 y 为参数被调用，则运行 [[Resolve]](promise, y)
+            r => {
+              if (statusChanged) { return; }
+              statusChanged = true;
+              rejected(r)
+            } // 如果 rejectPromise 以据因 r 为参数被调用，则以据因 r 拒绝 promise
+          );
+        } else {
+          // 如果 then 不是函数，以 x 为参数执行 promise
+          resolved(x);
+        }
+      } catch (reason) {
+        // 如果调用 then 方法抛出了异常 e
+        if (statusChanged) { return; }
+        statusChanged = true;
+        rejected(reason);
+      }
+    } else {
+      // 如果 x 不为对象或者函数，以 x 为参数执行 promise
+      resolved(x);
+    }
   }
 
   /**
@@ -171,9 +238,11 @@ class promise {
 // new promise(1);
 
 // Case 1: 直接输入报错的函数
-// new promise(() => {
-//   throw new Error('error');
-// });
+new promise(() => {
+  throw new Error('error');
+}).catch(e => {
+  console.log(e);
+});
 
 // Case 2: 没有触发状态数组
 // new promise((resolved, rejected) => {
