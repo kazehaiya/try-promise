@@ -73,7 +73,7 @@ class promise {
       promiseNext = new promise((resolved, rejected) => {
         // 处理 resolved 部分函数
         this._setResolvedList(promiseNext, onResolved, resolved, rejected);
-        // 处理 reject 部分函数
+        // 处理 rejected 部分函数
         this._setRejectedList(promiseNext, onRejected, resolved, rejected);
       })
     }
@@ -181,13 +181,13 @@ class promise {
       // 判断 x 当前的状态，如果 x 处于等待态，promise 需保持为等待态直至 x 被执行或拒绝
       if (x.currentStatus === PENDING) {
         x.then(value => {
-          promise._thenable(newPromise, value, resolve, reject);
+          promise._thenable(newPromise, value, resolved, rejected);
         }, error => {
-          reject(error);
+          rejected(error);
         });
       } else {
         // 当为 resolved/rejected 状态时，直接执行返回对应状态即可
-        x.then(resolve, reject);
+        x.then(resolved, rejected);
       }
     }
     // 调用时，如果状态一旦改变了就不再执行其余的内容
