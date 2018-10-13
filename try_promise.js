@@ -23,7 +23,7 @@ class promise {
       if (value instanceof promise) {
         return value.then(resolved, rejected);
       }
-      // 其他情况放入下一宏任务队列，依次执行
+      // 其他情况放入下一宏任务队列，依次执行（先执行完 then 链，再处理队列）
       setTimeout(() => {
         if (this.currentStatus === PENDING) {
           this.currentStatus = RESOLVED;
@@ -35,7 +35,7 @@ class promise {
     };
     // 选择 rejected 或者出错时的回调
     const rejected = reason => {
-      // 放入下一宏任务队列，依次执行
+      // 其他情况放入下一宏任务队列，依次执行（先执行完 then 链，再处理队列）
       setTimeout(() => {
         if (this.currentStatus === PENDING) {
           this.currentStatus = REJECTED;
@@ -147,7 +147,7 @@ class promise {
   }
 
   /**
-   * Promise 解决过程
+   * Promise 解决过程（决定能否继续执行下一个 then 函数）
    *
    * @static
    * @param {Object} newPromise  返回的新 promise 对象
