@@ -63,8 +63,8 @@ class promise {
    */
   then(onResolved, onRejected) {
     // 此处处理 then 链，结果存入数组，实现透传，同时 onRejected 为错误捕获做准备
-    onResolved = this._isFunction(onResolved) ? onResolved : value => value;
-    onRejected = this._isFunction(onRejected) ? onRejected : reason => { throw (reason); };
+    onResolved = promise._isFunction(onResolved) ? onResolved : value => value;
+    onRejected = promise._isFunction(onRejected) ? onRejected : reason => { throw reason; };
     // 判断当前的状态，每次都返回一个新的 promise 实例（规范3.3）
     let statusNow = this.currentStatus;
     let promiseNext = null;
@@ -72,25 +72,29 @@ class promise {
     if (statusNow === PENDING) {
       promiseNext = new promise((resolved, rejected) => {
         // 处理 resolved 部分函数
-        this._setResolvedList(promiseNext, onResolved, resolved, rejected);
+        this.resolvedArr.push(() => {
+          promise._dealStatusCommonFunc(this, promiseNext, onResolved, resolved, rejected);
+        });
         // 处理 rejected 部分函数
-        this._setRejectedList(promiseNext, onRejected, resolved, rejected);
+        this.rejectedArr.push(() => {
+          promise._dealStatusCommonFunc(this, promiseNext, onRejected, resolved, rejected);
+        });
       })
     }
     // resolved 状态
     if (statusNow === RESOLVED) {
       promiseNext = new promise((resolved, rejected) => {
         setTimeout(() => {
-          this._setResolvedList(promiseNext, onResolved, resolved, rejected);
-        }, 0)
+          promise._dealStatusCommonFunc(this, promiseNext, onResolved, resolved, rejected);
+        }, 0);
       });
     }
     // rejected 状态
     if (statusNow === REJECTED) {
       promiseNext = new promise((resolved, rejected) => {
         setTimeout(() => {
-          this._setRejectedList(promiseNext, onRejected, resolved, rejected);
-        }, 0)
+          promise._dealStatusCommonFunc(this, promiseNext, onRejected, resolved, rejected);
+        }, 0);
       });
     }
     // 返回新的 promise
@@ -109,47 +113,25 @@ class promise {
   }
 
   /**
-   * 为 resolvedArr 列表添加回调项
+   * 处理三种状态的公用方法
    *
-   * @param {Object} newPromise
-   * @param {Function} onResolved
-   * @param {Function} resolved
-   * @param {Function} rejected
+   * @static
+   * @param {*} self
+   * @param {*} newPromise
+   * @param {*} callback
+   * @param {*} resolved
+   * @param {*} rejected
    * @memberof promise
    */
-  _setResolvedList(newPromise, onResolved, resolved, rejected) {
-    this.resolvedArr.push(() => {
-      // 考虑到传入的函数为 () => { throw new Error('reason') }
-      try {
-        // 获取当前 then 函数的返回值（入参为前者的结果）
-        const callback = onResolved(this.result);
-        promise._thenable(newPromise, callback, resolved, rejected);
-      } catch(reason) {
-        rejected(reason);
-      }
-    });
-  }
-
-  /**
-   * 为 resolvedArr 列表添加回调项
-   *
-   * @param {Object} newPromise
-   * @param {Function} onResolved
-   * @param {Function} resolved
-   * @param {Function} rejected
-   * @memberof promise
-   */
-  _setRejectedList(newPromise, onRejected, resolved, rejected) {
-    this.rejectedArr.push(() => {
-      // 考虑到传入的函数为 () => { throw new Error('reason') }
-      try {
-        // 获取当前 then 函数的返回值（入参为前者的结果）
-        const callback = onRejected(this.result);
-        promise._thenable(newPromise, callback, resolved, rejected);
-      } catch(reason) {
-        rejected(reason);
-      }
-    });
+  static _dealStatusCommonFunc(self, newPromise, callback, resolved, rejected) {
+    // 考虑到传入的函数为 () => { throw new Error('reason') }
+    try {
+      // 获取当前 then 函数的返回值（入参为前者的结果）
+      const x = callback(self.result);
+      promise._thenable(newPromise, x, resolved, rejected);
+    } catch(reason) {
+      rejected(reason);
+    }
   }
 
   /**
@@ -158,7 +140,7 @@ class promise {
    * @param {Function} target
    * @memberof promise
    */
-  _isFunction(target) {
+  static _isFunction(target) {
     return Object.prototype.toString.call(target) === '[object Function]';
   }
 
@@ -210,7 +192,7 @@ class promise {
             r => {
               if (statusChanged) { return; }
               statusChanged = true;
-              rejected(r)
+              rejected(r);
             } // 如果 rejectPromise 以据因 r 为参数被调用，则以据因 r 拒绝 promise
           );
         } else {
