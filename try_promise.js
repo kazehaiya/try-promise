@@ -25,6 +25,7 @@ class promise {
       }
       // 其他情况放入下一宏任务队列，依次执行（先执行完 then 链，再处理队列）
       setTimeout(() => {
+        // 注：此处的 this 指向的是新返回的 promise 对象
         if (this.currentStatus === PENDING) {
           this.currentStatus = RESOLVED;
           this.result = value;
@@ -37,6 +38,7 @@ class promise {
     const rejected = reason => {
       // 其他情况放入下一宏任务队列，依次执行（先执行完 then 链，再处理队列）
       setTimeout(() => {
+        // 注：此处的 this 指向的是新返回的 promise 对象
         if (this.currentStatus === PENDING) {
           this.currentStatus = REJECTED;
           this.result = reason;
