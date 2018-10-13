@@ -105,7 +105,7 @@ class promise {
    * 异常捕捉
    *
    * @param {Function} onRejected
-   * @returns
+   * @returns {Boolean}
    * @memberof promise
    */
   catch(onRejected) {
@@ -137,7 +137,9 @@ class promise {
   /**
    * 判断是否是函数(内部方法)
    *
-   * @param {Function} target
+   * @static
+   * @param {*} target
+   * @returns
    * @memberof promise
    */
   static _isFunction(target) {
@@ -147,10 +149,12 @@ class promise {
   /**
    * Promise 解决过程
    *
+   * @static
    * @param {Object} newPromise  返回的新 promise 对象
    * @param {*} x                上一个回调函数返回值
    * @param {Function} resolved  回调函数
    * @param {Function} rejected  回调函数
+   * @returns
    * @memberof promise
    */
   static _thenable(newPromise, x, resolved, rejected) {

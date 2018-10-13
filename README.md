@@ -1,11 +1,11 @@
 > [Promise/A+ 规范](http://malcolmyu.github.io/malnote/2015/06/12/Promises-A-Plus/)
 
 ## 学习心得
-#### Promise 最初的流程
-1. 最初走完整个 promise 链，先处理同步内容（即 resolved 和 rejected 都不是函数的情况），直接执行该内容，遇见函数则存入回调数组（resolved 函数存入 resolveArr 数组，rejected 函数存入 rejectedArr 数组）
-> 注：最初的函数如果没有调用 resolved/rejected 回调函数则 then 链的异步回调函数都会被忽略（因为没有触发存储状态的数组）;<br>
-> then 链的函数由 promise 3.x 规范知默认返回 promise 类型的回调函数且可透传;
+#### Promise 运行流程
+1. 先处理最初的 new Promise(...) 的传入函数（传入非函数则报错），先处理函数内的同步内容，之后将回调函数存入异步数组，压入栈底。
+> 注： 没有回调函数则不会处理之后的 then 链的异步方法，虽然会遍历完 then 链。
 
-2. 待同步函数处理完成后，开始处理两条链的数组（如果最初有触发回调的话），由于触发的是异步的回调函数，根据该回调函数的内容来处理对应的 resolvedArr/rejectedArr 链，resolve 情况可继续向后部的链执行，rejected 情况则停止执行。
-
-3. 待分析……
+2. 处理 then 链，由于 Promise 有三种状态（pending, resolved/fulfilled, rejected），因此根据状态不同执行不同操作（每次都返回一个新的 Promise 对象）：
+- pending 状态：将回调函数存入对应的两种状态的数组内，以便回调函数触发的内容来触发相应操作。
+- resolved 状态：获取前一个 Promise 的处理值（ result 结果），触发相应的 resolvedArr 数组
+- rejected 状态：获取前一个 Promise 的处理值（ result 结果），触发相应的 rejectedArr 数组
