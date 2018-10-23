@@ -16,7 +16,6 @@ class promise {
     this.rejectedArr = [];
     // 异步的结果
     this.result = undefined;
-
     // 选择 resolved 或者成功时的回调
     const resolved = value => {
       // resolved 中传入的参数为 promise 的情况
@@ -79,7 +78,7 @@ class promise {
         this.rejectedArr.push(() => {
           promise._dealStatusCommonFunc(this, promiseNext, onRejected, resolved, rejected);
         });
-      })
+      });
     }
     // resolved 状态
     if (statusNow === RESOLVED) {
@@ -109,11 +108,40 @@ class promise {
    * @memberof promise
    */
   catch(onRejected) {
+    // 返回一个 promise ，相当于内部的一个状态为 resolved 的函数透传
     return this.then(undefined, onRejected);
   }
 
   /**
-   * 处理三种状态的公用方法
+   * promise.resolve() 方法
+   *
+   * @static
+   * @param {*} value
+   * @returns
+   * @memberof promise
+   */
+  static resolve(value) {
+    return new promise((resolve, reject) => {
+      resolve(value);
+    });
+  }
+
+  /**
+   * promise.reject() 方法
+   *
+   * @static
+   * @param {*} reason
+   * @returns
+   * @memberof promise
+   */
+  static reject(reason) {
+    return new promise((resolve, reject) => {
+      reject(reason);
+    });
+  }
+
+  /**
+   * 处理三种状态的公用方法（私有）
    *
    * @static
    * @param {*} self
@@ -135,7 +163,7 @@ class promise {
   }
 
   /**
-   * 判断是否是函数(内部方法)
+   * 判断是否是函数(私有)
    *
    * @static
    * @param {*} target
@@ -147,7 +175,7 @@ class promise {
   }
 
   /**
-   * Promise 解决过程（决定能否继续执行下一个 then 函数）
+   * Promise 解决过程（决定能否继续执行下一个 then 函数）（私有）
    *
    * @static
    * @param {Object} newPromise  返回的新 promise 对象
