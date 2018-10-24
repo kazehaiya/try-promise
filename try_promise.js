@@ -8,6 +8,11 @@ const REJECTED = 'rejected';
  * @class promise
  */
 class promise {
+  /**
+   * 创建 promise 实例
+   * @param {Function} resolver  // 传入的回调函数
+   * @memberof promise
+   */
   constructor(resolver) {
     // 初始化状态
     this.currentStatus = PENDING;
@@ -58,8 +63,9 @@ class promise {
   /**
    * then 链
    *
-   * @param {Function} onResolved 可选参数，非函数可忽略（规范2.2）
-   * @param {Function} onRejected 可选参数，非函数可忽略（规范2.2）
+   * @param {Function}  // onResolved 可选参数，非函数可忽略（规范2.2）
+   * @param {Function}  // onRejected 可选参数，非函数可忽略（规范2.2）
+   * @returns {Object}  // 返回一个新 promise
    * @memberof promise
    */
   then(onResolved, onRejected) {
@@ -105,8 +111,8 @@ class promise {
   /**
    * 异常捕捉
    *
-   * @param {Function} onRejected
-   * @returns {Boolean}
+   * @param {Function} onRejected  // 传入函数
+   * @returns {Object}             // 返回一个 then 链
    * @memberof promise
    */
   catch(onRejected) {
@@ -118,8 +124,8 @@ class promise {
    * promise.resolve() 方法
    *
    * @static
-   * @param {*} value
-   * @returns
+   * @param {*} value   // 传入值
+   * @returns {Object}  // 返回一个 resolve 状态的 promise
    * @memberof promise
    */
   static resolve(value) {
@@ -132,8 +138,8 @@ class promise {
    * promise.reject() 方法
    *
    * @static
-   * @param {*} reason
-   * @returns
+   * @param {*} reason  // 传入值
+   * @returns {Object}  // 返回一个 resolve 状态的 promise
    * @memberof promise
    */
   static reject(reason) {
@@ -146,11 +152,11 @@ class promise {
    * 处理三种状态的公用方法（私有）
    *
    * @static
-   * @param {*} self
-   * @param {*} newPromise
-   * @param {*} callback
-   * @param {*} resolved
-   * @param {*} rejected
+   * @param {Object} self        this 指针的别名
+   * @param {Object} newPromise  新创建的 promise
+   * @param {Function} callback  传入的回调函数
+   * @param {Function} resolved  新创建的 promise 的回调函数 resolved
+   * @param {Function} rejected  新创建的 promise 的回调函数 rejected
    * @memberof promise
    */
   static _dealStatusCommonFunc(self, newPromise, callback, resolved, rejected) {
@@ -168,8 +174,8 @@ class promise {
    * 判断是否是函数(私有)
    *
    * @static
-   * @param {*} target
-   * @returns
+   * @param {*} target   待对比的值
+   * @returns {Boolean}  返回对比结果
    * @memberof promise
    */
   static _isFunction(target) {
