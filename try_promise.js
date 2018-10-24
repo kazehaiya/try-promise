@@ -116,7 +116,7 @@ class promise {
    * @memberof promise
    */
   catch(onRejected) {
-    // 返回一个 promise ，相当于内部的一个状态为 resolved 的函数透传
+    // 返回一个 promise
     return this.then(undefined, onRejected);
   }
 
