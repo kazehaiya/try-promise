@@ -10,7 +10,7 @@ const REJECTED = 'rejected';
 class promise {
   /**
    * 创建 promise 实例
-   * @param {Function} resolver  // 传入的回调函数
+   * @param {Function} resolver  传入的回调函数
    * @memberof promise
    */
   constructor(resolver) {
@@ -63,9 +63,9 @@ class promise {
   /**
    * then 链
    *
-   * @param {Function}  // onResolved 可选参数，非函数可忽略（规范2.2）
-   * @param {Function}  // onRejected 可选参数，非函数可忽略（规范2.2）
-   * @returns {Object}  // 返回一个新 promise
+   * @param {Function}  onResolved 可选参数，非函数可忽略（规范2.2）
+   * @param {Function}  onRejected 可选参数，非函数可忽略（规范2.2）
+   * @returns {Object}  返回一个新 promise
    * @memberof promise
    */
   then(onResolved, onRejected) {
@@ -111,8 +111,8 @@ class promise {
   /**
    * 异常捕捉
    *
-   * @param {Function} onRejected  // 传入函数
-   * @returns {Object}             // 返回一个 then 链
+   * @param {Function} onRejected  传入函数
+   * @returns {Object}             返回一个 then 链
    * @memberof promise
    */
   catch(onRejected) {
@@ -120,12 +120,30 @@ class promise {
     return this.then(undefined, onRejected);
   }
 
+  static race(promiseArr) {
+    // 传入值不为数组则报错
+    if (!promise._isArray(promiseArr)) {
+      throw new TypeError('You must pass an array to race!');
+    }
+    // 此处相当于返回一个 then 链
+    return new promise((resolved, rejected) => {
+      const len = promiseArr.length;
+      // 处理成函数
+      resolved = value => resolved(value);
+      rejected = reason => rejected(reason);
+      let index = 0;
+      do {
+        promiseArr[index].then(resolved, rejected);
+      } while (index++ < len);
+    });
+  }
+
   /**
    * promise.resolve() 方法
    *
    * @static
-   * @param {*} value   // 传入值
-   * @returns {Object}  // 返回一个 resolve 状态的 promise
+   * @param {*} value   传入值
+   * @returns {Object}  返回一个 resolve 状态的 promise
    * @memberof promise
    */
   static resolve(value) {
@@ -138,8 +156,8 @@ class promise {
    * promise.reject() 方法
    *
    * @static
-   * @param {*} reason  // 传入值
-   * @returns {Object}  // 返回一个 resolve 状态的 promise
+   * @param {*} reason  传入值
+   * @returns {Object}  返回一个 resolve 状态的 promise
    * @memberof promise
    */
   static reject(reason) {
@@ -171,11 +189,23 @@ class promise {
   }
 
   /**
+   * 判断是否是数组(私有)
+   *
+   * @static
+   * @param {*} target   待判断的值
+   * @returns {Boolean}  返回判断的结果
+   * @memberof promise
+   */
+  static _isArray(target) {
+    return Array.isArray(target);
+  }
+
+  /**
    * 判断是否是函数(私有)
    *
    * @static
-   * @param {*} target   待对比的值
-   * @returns {Boolean}  返回对比结果
+   * @param {*} target   待判断的值
+   * @returns {Boolean}  返回判断的结果
    * @memberof promise
    */
   static _isFunction(target) {
@@ -253,3 +283,28 @@ class promise {
 }
 
 module.exports = promise;
+
+
+const fast = new promise((rs, rj) => {
+  setTimeout(() => {
+    rs('100ms');
+  }, 100)
+});
+
+const middle = new promise((rs, rj) => {
+  setTimeout(() => {
+    rs('200ms');
+  }, 200)
+});
+
+const lowest = new promise((rs, rj) => {
+  setTimeout(() => {
+    rs('300ms');
+  }, 300)
+});
+
+const promiseArr = [fast, middle, lowest];
+
+promise.race(promiseArr).then(res => {
+  console.log(res);
+})
