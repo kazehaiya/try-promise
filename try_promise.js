@@ -29,7 +29,6 @@ class promise {
       }
       // 其他情况放入下一宏任务队列，依次执行（先执行完 then 链，再处理队列）
       setTimeout(() => {
-        // 注：此处的 this 指向的是新返回的 promise 对象
         if (this.currentStatus === PENDING) {
           this.currentStatus = RESOLVED;
           this.result = value;
@@ -42,7 +41,6 @@ class promise {
     const rejected = reason => {
       // 其他情况放入下一宏任务队列，依次执行（先执行完 then 链，再处理队列）
       setTimeout(() => {
-        // 注：此处的 this 指向的是新返回的 promise 对象
         if (this.currentStatus === PENDING) {
           this.currentStatus = REJECTED;
           this.result = reason;
@@ -120,6 +118,28 @@ class promise {
     return this.then(undefined, onRejected);
   }
 
+  /**
+   * finally 方法
+   *
+   * @param {Function} resolver  回调函数
+   * @returns
+   * @memberof promise
+   */
+  finally(resolver) {
+    resolver();
+    // then 链内再取 this.result 值，因为此会压入数组，之后状态变化后才能去除，因此不能写在外面
+    return this.then(
+      () => {
+        const result = this.result;
+        return promise.resolve(result);
+      },
+      () => {
+        const reason = this.result;
+        return promise.reject(reason);
+      }
+    );
+  }
+
   static race(promiseArr) {
     // 传入值不为数组则报错
     if (!promise._isArray(promiseArr)) {
@@ -181,6 +201,7 @@ class promise {
     // 考虑到传入的函数为 () => { throw new Error('reason') }
     try {
       // 获取当前 then 函数的返回值（入参为前者的结果）
+      // 如果 then 的传参函数没有 return，默认就是 undefined 了
       const x = callback(self.result);
       promise._thenable(newPromise, x, resolved, rejected);
     } catch(reason) {
@@ -285,26 +306,43 @@ class promise {
 module.exports = promise;
 
 
-const fast = new promise((rs, rj) => {
-  setTimeout(() => {
-    rs('100ms');
-  }, 100)
-});
-
-const middle = new promise((rs, rj) => {
-  setTimeout(() => {
-    rs('200ms');
-  }, 200)
-});
-
-const lowest = new promise((rs, rj) => {
-  setTimeout(() => {
-    rs('300ms');
-  }, 300)
-});
-
-const promiseArr = [fast, middle, lowest];
-
-promise.race(promiseArr).then(res => {
-  console.log(res);
+new promise((rs, rj) => {
+  rs(1);
 })
+.finally(() => {
+  console.log('here');
+})
+.then(res => {
+  console.log('resolve', res);
+})
+.catch(reason => {
+  console.log('catch', reason);
+  return 1;
+})
+.then(res => {
+  console.log('after', res)
+})
+
+// const fast = new promise((rs, rj) => {
+//   setTimeout(() => {
+//     rs('100ms');
+//   }, 100)
+// });
+
+// const middle = new promise((rs, rj) => {
+//   setTimeout(() => {
+//     rs('200ms');
+//   }, 200)
+// });
+
+// const lowest = new promise((rs, rj) => {
+//   setTimeout(() => {
+//     rs('300ms');
+//   }, 300)
+// });
+
+// const promiseArr = [fast, middle, lowest];
+
+// promise.race(promiseArr).then(res => {
+//   console.log(res);
+// })
