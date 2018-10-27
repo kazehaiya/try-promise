@@ -121,23 +121,25 @@ class promise {
   /**
    * finally 方法
    *
-   * @param {Function} resolver  回调函数
-   * @returns
+   * @param {Function} callback  回调函数
+   * @returns {Object}           返回一个 then 链
    * @memberof promise
    */
-  finally(resolver) {
-    resolver();
+  finally(callback) {
+    // 直接执行回调函数
+    callback();
     // then 链内再取 this.result 值，因为此会压入数组，之后状态变化后才能去除，因此不能写在外面
-    return this.then(
-      () => {
-        const result = this.result;
-        return promise.resolve(result);
-      },
-      () => {
-        const reason = this.result;
-        return promise.reject(reason);
-      }
-    );
+    // return this.then(
+    //   () => {
+    //     const result = this.result;
+    //     return promise.resolve(result);
+    //   },
+    //   () => {
+    //     const reason = this.result;
+    //     return promise.reject(reason);
+    //   }
+    // );
+    return this;
   }
 
   static race(promiseArr) {
@@ -304,24 +306,6 @@ class promise {
 }
 
 module.exports = promise;
-
-
-new promise((rs, rj) => {
-  rs(1);
-})
-.finally(() => {
-  console.log('here');
-})
-.then(res => {
-  console.log('resolve', res);
-})
-.catch(reason => {
-  console.log('catch', reason);
-  return 1;
-})
-.then(res => {
-  console.log('after', res)
-})
 
 // const fast = new promise((rs, rj) => {
 //   setTimeout(() => {
