@@ -8,5 +8,8 @@
   },
   "repository": "git@github.com:kazehaiya/try-promise.git",
   "author": "c763416559@gmail.com",
-  "license": "TIM"
+  "license": "TIM",
+  "dependencies": {
+    "promises-aplus-tests": "^2.1.2"
+  }
 }
