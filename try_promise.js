@@ -122,23 +122,22 @@ class promise {
    * finally 方法
    *
    * @param {Function} callback  回调函数
-   * @returns {Object}           返回一个 then 链
+   * @returns {Object}           返回一个 then 链或自己
    * @memberof promise
    */
   finally(callback) {
-    // 直接执行回调函数
-    callback();
-    // then 链内再取 this.result 值，因为此会压入数组，之后状态变化后才能去除，因此不能写在外面
+    // 如果每次链式返回一个新的 promise，就就用此处注释方法
+    // 都得用 promise.resolve 回调，因为 then 链第一个参数捕获的是 resolve
     // return this.then(
-    //   () => {
-    //     const result = this.result;
-    //     return promise.resolve(result);
+    //   value => {
+    //     return promise.resolve(callback()).then(() => value);
     //   },
-    //   () => {
-    //     const reason = this.result;
-    //     return promise.reject(reason);
+    //   reason => {
+    //     return promise.resolve(callback()).then(() => {throw reason});
     //   }
     // );
+    // 直接执行回调函数
+    callback();
     return this;
   }
 
@@ -328,5 +327,5 @@ module.exports = promise;
 // const promiseArr = [fast, middle, lowest];
 
 // promise.race(promiseArr).then(res => {
-//   console.log(res);
+//   console.log('result', res);
 // })
