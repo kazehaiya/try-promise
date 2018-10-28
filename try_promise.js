@@ -142,11 +142,11 @@ class promise {
   }
 
   /**
-   * promise race 方法
+   * promise.race() 方法
    *
    * @static
    * @param {Array} promiseArr  promise 数组
-   * @returns
+   * @returns {Object}  返回一个新的 promsie
    * @memberof promise
    */
   static race(promiseArr) {
@@ -163,6 +163,14 @@ class promise {
     });
   }
 
+  /**
+   * promise.all() 方法
+   *
+   * @static
+   * @param {Array} promiseArr
+   * @returns {Object}  返回一个新的 promsie
+   * @memberof promise
+   */
   static all(promiseArr) {
     // 传入值不为数组则报错
     if (!promise._isArray(promiseArr)) {
