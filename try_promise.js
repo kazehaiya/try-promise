@@ -141,22 +141,36 @@ class promise {
     return this;
   }
 
+  /**
+   * promise race 方法
+   *
+   * @static
+   * @param {Array} promiseArr  promise 数值
+   * @returns
+   * @memberof promise
+   */
   static race(promiseArr) {
     // 传入值不为数组则报错
     if (!promise._isArray(promiseArr)) {
       throw new TypeError('You must pass an array to race!');
     }
-    // 此处相当于返回一个 then 链
+    // promise 中返回值为 promise 的情况会优先处理完内部的 promise 链
     return new promise((resolved, rejected) => {
-      const len = promiseArr.length;
-      // 处理成函数
-      resolved = value => resolved(value);
-      rejected = reason => rejected(reason);
-      let index = 0;
-      do {
-        promiseArr[index].then(resolved, rejected);
-      } while (index++ < len);
+      // 先处理完的先接上 then 链，执行后面的内容
+      promiseArr.forEach(value => {
+        promise.resolve(value).then(resolved, rejected);
+      })
     });
+  }
+
+  static all(promiseArr) {
+    // 传入值不为数组则报错
+    if (!promise._isArray(promiseArr)) {
+      throw new TypeError('You must pass an array to race!');
+    }
+    // 创建一个对应的结果列表
+    var resultsList = Array.from(promiseArr);
+    console.log(resultsList)
   }
 
   /**
@@ -306,26 +320,26 @@ class promise {
 
 module.exports = promise;
 
-// const fast = new promise((rs, rj) => {
-//   setTimeout(() => {
-//     rs('100ms');
-//   }, 100)
-// });
+const fast = new promise((rs, rj) => {
+  setTimeout(() => {
+    rs('100ms');
+  }, 100)
+});
 
-// const middle = new promise((rs, rj) => {
-//   setTimeout(() => {
-//     rs('200ms');
-//   }, 200)
-// });
+const middle = new promise((rs, rj) => {
+  setTimeout(() => {
+    rs('200ms');
+  }, 200)
+});
 
-// const lowest = new promise((rs, rj) => {
-//   setTimeout(() => {
-//     rs('300ms');
-//   }, 300)
-// });
+const lowest = new promise((rs, rj) => {
+  setTimeout(() => {
+    rs('300ms');
+  }, 300)
+});
 
-// const promiseArr = [fast, middle, lowest];
+const faster = 0;
 
-// promise.race(promiseArr).then(res => {
-//   console.log('result', res);
-// })
+const promiseArr = [fast, middle, lowest, faster];
+
+promise.all(promiseArr)
