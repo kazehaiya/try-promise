@@ -145,14 +145,14 @@ class promise {
    * promise race 方法
    *
    * @static
-   * @param {Array} promiseArr  promise 数值
+   * @param {Array} promiseArr  promise 数组
    * @returns
    * @memberof promise
    */
   static race(promiseArr) {
     // 传入值不为数组则报错
     if (!promise._isArray(promiseArr)) {
-      throw new TypeError('You must pass an array to race!');
+      throw new TypeError('Arguments must be an array!');
     }
     // promise 中返回值为 promise 的情况会优先处理完内部的 promise 链
     return new promise((resolved, rejected) => {
@@ -166,11 +166,36 @@ class promise {
   static all(promiseArr) {
     // 传入值不为数组则报错
     if (!promise._isArray(promiseArr)) {
-      throw new TypeError('You must pass an array to race!');
+      throw new TypeError('Arguments must be an array!');
     }
-    // 创建一个对应的结果列表
-    var resultsList = Array.from(promiseArr);
-    console.log(resultsList)
+    return new promise((resolved, rejected) => {
+      // 获取数组长度
+      const arrayLength = promiseArr.length;
+      // 创建一个对应长度的结果列表
+      const resultsList = new Array(arrayLength);
+      // 起始值
+      let arrayPos = 0;
+      // 遍历完传入数组的所有项
+      promiseArr.forEach((item, index) => {
+        // 注意： index 和 arrayPos 的区别
+        // index 在 then 的回调函数内，其顺序一定等于该传入的 promise 函数（有非 promise 的同步函数）的顺序
+        // arrayPos 仅仅记录该回调函数执行了几次，当执行次数等于传入数组长度时就可以返回结果了
+        promise.resolve(item)
+        .then(value => {
+          // 获取对应项的返回结果值
+          resultsList[index] = value;
+          arrayPos++;
+          if (arrayPos === arrayLength) {
+            return resolved(resultsList);
+          }
+        })
+        .catch(reason => {
+          // 传入的 promise 回调函数返回的值为 rejected 情况
+          // 或者中途出错的情况 ( throw new Error() )
+          return rejected(reason);
+        });
+      });
+    });
   }
 
   /**
@@ -319,27 +344,3 @@ class promise {
 }
 
 module.exports = promise;
-
-const fast = new promise((rs, rj) => {
-  setTimeout(() => {
-    rs('100ms');
-  }, 100)
-});
-
-const middle = new promise((rs, rj) => {
-  setTimeout(() => {
-    rs('200ms');
-  }, 200)
-});
-
-const lowest = new promise((rs, rj) => {
-  setTimeout(() => {
-    rs('300ms');
-  }, 300)
-});
-
-const faster = 0;
-
-const promiseArr = [fast, middle, lowest, faster];
-
-promise.all(promiseArr)
