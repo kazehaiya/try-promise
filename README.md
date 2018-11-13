@@ -14,7 +14,7 @@
 > **注：** 在 _thenable 中，对于 then 传入的回调函数无返回值得情况，一律都以 resolved 状态来处理。
 
 #### 其他
-1. 在链首确定 then 链后面的运行状态（一开始 rejected 就走 rejected 链，否则走 resolved 链），中间状态基本就都确定了（除非在 resolved 链中抛出异常或者返回一个新的Promise改变其返回的状态，即在其返回 resolve 结果之前改变了状态，rejected 同理）
+1. 在链首确定 then 链后面的运行状态（一开始 rejected 就走 rejected 链，否则走 resolved 链），then 链中对应位置的函数如果没有写则实现透传（resolved 链直接返回结果，rejected 链直接抛异常），无论哪一条链捕获到了回调函数会直接执行该回调函数，非特别处理，默认返回值都为 resolved 状态（rejected 链也不例外）。
 
 2. catch 如果没有返回值（即 return xxx;），那么后面的 then 链的状态会为 resoved （结果值会改变，如果 catch 内没有返回值）
 
